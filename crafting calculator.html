@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Crafting & Profit Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .calculator-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .tab-content {
+            padding: 15px;
+            border-left: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0 0 5px 5px;
+        }
+        .section-title {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .btn-action {
+            margin: 5px;
+            font-weight: 500;
+        }
+        .output-area {
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+        }
+        .highlight {
+            color: blue;
+            font-weight: bold;
+        }
+        .profit {
+            color: green;
+            font-weight: bold;
+        }
+        .loss {
+            color: red;
+            font-weight: bold;
+        }
+        .resource {
+            color: #333333;
+        }
+        .required {
+            color: #8B4513;
+            font-weight: bold;
+        }
+        .error-input {
+            border-color: #dc3545 !important;
+        }
+        .table-responsive {
+            margin-bottom: 20px;
+        }
+        .remove-btn {
+            padding: 0 5px;
+            margin-left: 5px;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        .negative-value {
+            color: #dc3545;
+        }
+        .positive-value {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1 class="text-center mb-4">Combined Crafting & Profit Calculator</h1>
+        
+        <ul class="nav nav-tabs" id="calculatorTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="crafting-tab" data-bs-toggle="tab" data-bs-target="#crafting" type="button" role="tab">Crafting Calculator</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="profit-tab" data-bs-toggle="tab" data-bs-target="#profit" type="button" role="tab">Profit Calculator</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="calculatorTabsContent">
+            <!-- Crafting Calculator Tab -->
+            <div class="tab-pane fade show active" id="crafting" role="tabpanel">
+                <div class="section-title">Crafting Info</div>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="itemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="itemName">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="returnRate" class="form-label">Return Rate (%)</label>
+                        <input type="number" class="form-control" id="returnRate" value="25">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="salePrice" class="form-label">Sale Price</label>
+                        <input type="number" class="form-control" id="salePrice" value="0" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="taxRate" class="form-label">Market Tax Rate (%)</label>
+                        <input type="number" class="form-control" id="taxRate" value="4">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="craftFee" class="form-label">Crafting Fee per Item</label>
+                        <input type="number" class="form-control" id="craftFee" value="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="craftExact">
+                            <label class="form-check-label" for="craftExact">Craft Exact Number</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="targetCount" class="form-label">Target Count</label>
+                        <input type="number" class="form-control" id="targetCount" disabled>
+                    </div>
+                </div>
+                
+                <div class="section-title">Resources</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="resourcesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Per Item</th>
+                                <th>Starting Qty</th>
+                                <th>Unit Price</th>
+                                <th>Artifact?</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resourcesBody">
+                            <!-- Resources will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-success btn-action" id="addResourceBtn">+ Add Resource</button>
+                
+                <div class="section-title mt-4">Journal Income</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="journalTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Quantity</th>
+                                <th>Income</th>
+                                <th>Tax (%)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="journalBody">
+                            <!-- Journal entries will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-success btn-action" id="addJournalBtn">+ Add Journal Income</button>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button class="btn btn-primary btn-action" id="calculateCraftingBtn">Calculate</button>
+                    <button class="btn btn-danger btn-action" id="clearCraftingBtn">Clear All</button>
+                </div>
+                
+                <div class="section-title mt-4">Calculation Results</div>
+                <div class="output-area" id="craftingOutput"></div>
+            </div>
+            
+            <!-- Profit Calculator Tab -->
+            <div class="tab-pane fade" id="profit" role="tabpanel">
+                <div class="section-title">Item Details</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="profitTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Cost/Item</th>
+                                <th>Sell Price</th>
+                                <th>Tax %</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profitBody">
+                            <!-- Profit items will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-4">
+                    <button class="btn btn-success btn-action" id="addProfitRowBtn">+ Add Item Row</button>
+                    <button class="btn btn-danger btn-action" id="clearProfitBtn">Clear All</button>
+                    <button class="btn btn-primary btn-action" id="calculateProfitBtn">Calculate Profit</button>
+                </div>
+                
+                <div class="section-title">Calculation Results</div>
+                <div class="output-area" id="profitOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tabs
+            const calculatorTabs = new bootstrap.Tab(document.getElementById('crafting-tab'));
+            
+            // Crafting Calculator Variables
+            let resourceRows = [];
+            let journalRows = [];
+            
+            // Profit Calculator Variables
+            let profitRows = [];
+            
+            // Crafting Calculator Functions
+            function addResourceRow() {
+                const rowId = 'resource-' + Date.now();
+                const row = document.createElement('tr');
+                row.id = rowId;
+                
+                row.innerHTML = `
+                    <td><input type="text" class="form-control resource-name"></td>
+                    <td><input type="number" class="form-control resource-per-item" value="0"></td>
+                    <td><input type="number" class="form-control resource-stock" value="0"></td>
+                    <td><input type="number" class="form-control resource-price" value="0" step="0.01"></td>
+                    <td class="text-center"><input type="checkbox" class="form-check-input resource-artifact"></td>
+                    <td><button class="btn btn-sm btn-danger remove-btn remove-resource">X</button></td>
+                `;
+                
+                document.getElementById('resourcesBody').appendChild(row);
+                resourceRows.push(rowId);
+                
+                // Focus on the name field
+                row.querySelector('.resource-name').focus();
+            }
+            
+            function addJournalRow() {
+                const rowId = 'journal-' + Date.now();
+                const row = document.createElement('tr');
+                row.id = rowId;
+                
+                row.innerHTML = `
+                    <td><input type="number" class="form-control journal-qty" value="0"></td>
+                    <td><input type="number" class="form-control journal-income" value="0" step="0.01"></td>
+                    <td><input type="number" class="form-control journal-tax" value="0"></td>
+                    <td><button class="btn btn-sm btn-danger remove-btn remove-journal">X</button></td>
+                `;
+                
+                document.getElementById('journalBody').appendChild(row);
+                journalRows.push(rowId);
+                
+                // Focus on the qty field
+                row.querySelector('.journal-qty').focus();
+            }
+            
+            function removeResourceRow(button) {
+                const row = button.closest('tr');
+                const rowId = row.id;
+                resourceRows = resourceRows.filter(id => id !== rowId);
+                row.remove();
+            }
+            
+            function removeJournalRow(button) {
+                const row = button.closest('tr');
+                const rowId = row.id;
+                journalRows = journalRows.filter(id => id !== rowId);
+                row.remove();
+            }
+            
+            function toggleCraftingTarget() {
+                const targetCount = document.getElementById('targetCount');
+                targetCount.disabled = !document.getElementById('craftExact').checked;
+                if (!targetCount.disabled) targetCount.focus();
+            }
+            
+            function clearCraftingAll() {
+                document.getElementById('itemName').value = '';
+                document.getElementById('returnRate').value = '25';
+                document.getElementById('salePrice').value = '0';
+                document.getElementById('taxRate').value = '4';
+                document.getElementById('craftFee').value = '0';
+                document.getElementById('craftExact').checked = false;
+                document.getElementById('targetCount').value = '';
+                document.getElementById('targetCount').disabled = true;
+                
+                resourceRows.forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                });
+                resourceRows = [];
+                
+                journalRows.forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                });
+                journalRows = [];
+                
+                document.getElementById('craftingOutput').textContent = '';
+                
+                // Add one empty row to each section
+                addResourceRow();
+                addJournalRow();
+            }
+            
+            function calculateCrafting() {
+                try {
+                    const item = document.getElementById('itemName').value;
+                    const returnRate = parseFloat(document.getElementById('returnRate').value) / 100;
+                    const salePrice = parseFloat(document.getElementById('salePrice').value);
+                    const taxRate = parseFloat(document.getElementById('taxRate').value) / 100;
+                    const craftFeePerItem = parseFloat(document.getElementById('craftFee').value);
+                    const craftExact = document.getElementById('craftExact').checked;
+                    const targetCount = craftExact ? parseInt(document.getElementById('targetCount').value) : null;
+                    
+                    // Get resources data
+                    const resources = [];
+                    resourceRows.forEach(rowId => {
+                        const row = document.getElementById(rowId);
+                        if (row) {
+                            const name = row.querySelector('.resource-name').value;
+                            const perItem = parseFloat(row.querySelector('.resource-per-item').value);
+                            const stock = parseFloat(row.querySelector('.resource-stock').value) || 0;
+                            const price = parseFloat(row.querySelector('.resource-price').value);
+                            const isArtifact = row.querySelector('.resource-artifact').checked;
+                            resources.push({ name, perItem, stock, price, isArtifact });
+                        }
+                    });
+                    
+                    // Calculate crafted count
+                    let crafted;
+                    if (craftExact) {
+                        crafted = targetCount || 0;
+                    } else {
+                        const counts = resources.map(res => {
+                            const effPerItem = res.isArtifact ? res.perItem : res.perItem * (1 - returnRate);
+                            return res.stock > 0 ? Math.floor(res.stock / effPerItem) : 0;
+                        });
+                        crafted = counts.length > 0 ? Math.min(...counts) : 0;
+                    }
+                    
+                    if (crafted <= 0) {
+                        if (craftExact) {
+                            crafted = parseInt(document.getElementById('targetCount').value) || 0;
+                        } else {
+                            throw new Error("Cannot craft zero or negative items");
+                        }
+                    }
+                    
+                    // Get journal data
+                    let journalIncome = 0;
+                    journalRows.forEach(rowId => {
+                        const row = document.getElementById(rowId);
+                        if (row) {
+                            const qty = parseInt(row.querySelector('.journal-qty').value) || 0;
+                            const income = parseFloat(row.querySelector('.journal-income').value) || 0;
+                            const tax = parseFloat(row.querySelector('.journal-tax').value) || 0;
+                            journalIncome += qty * income * (1 - tax / 100);
+                        }
+                    });
+                    
+                    // Calculate resource usage
+                    let totalInitial = 0;
+                    let totalRemaining = 0;
+                    let output = '';
+                    
+                    output += `Item: ${item}\n`;
+                    output += `Crafted: ${crafted.toLocaleString()}\n\n`;
+                    output += "Resources:\n";
+                    
+                    // Calculate required starting quantity if not provided
+                    resources.forEach(res => {
+                        if (res.stock === 0 && craftExact && crafted > 0) {
+                            const requiredStock = res.isArtifact 
+                                ? res.perItem * crafted 
+                                : Math.ceil(res.perItem * crafted * (1 - returnRate));
+                            output += `- ${res.name}: Required Starting Qty = ${requiredStock}\n`;
+                        }
+                    });
+                    
+                    // Calculate actual usage
+                    resources.forEach(res => {
+                        const used = res.perItem * crafted;
+                        const returned = res.isArtifact ? 0 : Math.round(used * returnRate);
+                        const remaining = Math.max(0, res.stock - used + returned);
+                        const actualUsed = res.stock - remaining;
+                        
+                        const initialValue = res.stock * res.price;
+                        const remainingValue = remaining * res.price;
+                        totalInitial += initialValue;
+                        totalRemaining += remainingValue;
+                        
+                        if (res.stock > 0) {
+                            output += `- ${res.name}: ${actualUsed} used (Actual), ${used} needed, `;
+                            output += `${returned} returned, ${remaining} remaining\n`;
+                        } else {
+                            output += `- ${res.name}: ${used} needed (No starting quantity provided)\n`;
+                        }
+                    });
+                    
+                    // Calculate financials
+                    const makingCost = totalInitial > 0 
+                        ? totalInitial - totalRemaining 
+                        : resources.reduce((sum, res) => sum + (res.perItem * crafted * res.price), 0);
+                    
+                    const marketValue = crafted * salePrice;
+                    const afterTax = marketValue * (1 - taxRate);
+                    const craftingFee = crafted * craftFeePerItem;
+                    const profit = afterTax - makingCost - craftingFee + journalIncome;
+                    
+                    output += "\nFinancials:\n";
+                    if (totalInitial > 0) {
+                        output += `Initial Purchase: ${totalInitial.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                        output += `Remaining Value: ${totalRemaining.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    }
+                    output += `Making Cost: ${makingCost.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    output += `Crafting Fee: ${craftingFee.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    output += `Journal Income: ${journalIncome.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    output += `Market Value: ${marketValue.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    output += `After Tax (${(taxRate * 100).toFixed(1)}%): ${afterTax.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    
+                    if (profit >= 0) {
+                        output += `PROFIT: ${profit.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    } else {
+                        output += `PROFIT: ${profit.toLocaleString('en-IN', {maximumFractionDigits: 2})}\n`;
+                    }
+                    
+                    // Display output with formatting
+                    const outputElement = document.getElementById('craftingOutput');
+                    outputElement.innerHTML = '';
+                    
+                    const lines = output.split('\n');
+                    lines.forEach(line => {
+                        const p = document.createElement('p');
+                        p.style.margin = '0';
+                        p.style.fontFamily = 'Consolas, monospace';
+                        
+                        if (line.includes('PROFIT:')) {
+                            p.className = profit >= 0 ? 'profit' : 'loss';
+                        } else if (line.includes('After Tax') || line.includes('Making Cost')) {
+                            p.className = 'highlight';
+                        } else if (line.includes('Required Starting Qty')) {
+                            p.className = 'required';
+                        } else if (line.startsWith('- ') && !line.includes('Required')) {
+                            p.className = 'resource';
+                        } else if (line.includes('Item:') || line.includes('Crafted:') || 
+                                  line.includes('Resources:') || line.includes('Financials:')) {
+                            p.style.fontWeight = 'bold';
+                        }
+                        
+                        p.textContent = line;
+                        outputElement.appendChild(p);
+                    });
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+            
+            // Profit Calculator Functions
+            function addProfitRow() {
+                const rowId = 'profit-' + Date.now();
+                const row = document.createElement('tr');
+                row.id = rowId;
+                
+                row.innerHTML = `
+                    <td><input type="text" class="form-control profit-item"></td>
+                    <td><input type="number" class="form-control profit-qty" min="1" value="1"></td>
+                    <td><input type="number" class="form-control profit-cost" min="0" step="0.01" value="0"></td>
+                    <td><input type="number" class="form-control profit-sell" min="0" step="0.01" value="0"></td>
+                    <td><input type="number" class="form-control profit-tax" min="0" value="4"></td>
+                    <td><button class="btn btn-sm btn-danger remove-btn remove-profit">X</button></td>
+                `;
+                
+                document.getElementById('profitBody').appendChild(row);
+                profitRows.push(rowId);
+                
+                // Focus on the item field
+                row.querySelector('.profit-item').focus();
+            }
+            
+            function removeProfitRow(button) {
+                const row = button.closest('tr');
+                const rowId = row.id;
+                profitRows = profitRows.filter(id => id !== rowId);
+                row.remove();
+            }
+            
+            function clearProfitAll() {
+                profitRows.forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                });
+                profitRows = [];
+                document.getElementById('profitOutput').textContent = '';
+                
+                // Add one empty row
+                addProfitRow();
+            }
+            
+            function calculateProfits() {
+                try {
+                    const itemGroups = {};
+                    let grandTotalCost = 0;
+                    let grandTotalSell = 0;
+                    let grandTotalProfit = 0;
+                    let hasValidRows = false;
+                    
+                    // Process each row
+                    profitRows.forEach(rowId => {
+                        const row = document.getElementById(rowId);
+                        if (row) {
+                            const item = row.querySelector('.profit-item').value.trim().toLowerCase();
+                            const qty = parseInt(row.querySelector('.profit-qty').value) || 0;
+                            const cost = parseFloat(row.querySelector('.profit-cost').value) || 0;
+                            const sell = parseFloat(row.querySelector('.profit-sell').value) || 0;
+                            const tax = parseFloat(row.querySelector('.profit-tax').value) || 0;
+                            
+                            if (!item || qty <= 0 || cost < 0 || sell < 0 || tax < 0) {
+                                return; // Skip invalid rows
+                            }
+                            
+                            hasValidRows = true;
+                            const totalCost = qty * cost;
+                            const totalSell = qty * sell;
+                            const taxAmount = (totalSell * tax) / 100;
+                            const afterTax = totalSell - taxAmount;
+                            const profit = afterTax - totalCost;
+                            
+                            // Update group totals
+                            if (!itemGroups[item]) {
+                                itemGroups[item] = {
+                                    totalCost: 0,
+                                    totalSell: 0,
+                                    totalProfit: 0
+                                };
+                            }
+                            itemGroups[item].totalCost += totalCost;
+                            itemGroups[item].totalSell += totalSell;
+                            itemGroups[item].totalProfit += profit;
+                            
+                            // Update grand totals
+                            grandTotalCost += totalCost;
+                            grandTotalSell += totalSell;
+                            grandTotalProfit += profit;
+                        }
+                    });
+                    
+                    if (!hasValidRows) {
+                        document.getElementById('profitOutput').textContent = 'No valid rows to calculate';
+                        return;
+                    }
+                    
+                    // Generate output
+                    let output = '';
+                    output += '#    Item            Qty     Cost/Item  Total Cost  Sell/Item  Total Sell  Tax    Aft-tax    Profit/Item  Total Profit\n';
+                    output += '=======================================================================================================================\n';
+                    
+                    // Add individual item rows
+                    let rowNum = 1;
+                    profitRows.forEach(rowId => {
+                        const row = document.getElementById(rowId);
+                        if (row) {
+                            const item = row.querySelector('.profit-item').value.trim().toLowerCase();
+                            const qty = parseInt(row.querySelector('.profit-qty').value) || 0;
+                            const cost = parseFloat(row.querySelector('.profit-cost').value) || 0;
+                            const sell = parseFloat(row.querySelector('.profit-sell').value) || 0;
+                            const tax = parseFloat(row.querySelector('.profit-tax').value) || 0;
+                            
+                            if (!item || qty <= 0 || cost < 0 || sell < 0 || tax < 0) {
+                                return; // Skip invalid rows
+                            }
+                            
+                            const totalCost = qty * cost;
+                            const totalSell = qty * sell;
+                            const taxAmount = (totalSell * tax) / 100;
+                            const afterTax = totalSell - taxAmount;
+                            const profitPerItem = (sell * (1 - tax / 100)) - cost;
+                            const totalProfit = afterTax - totalCost;
+                            
+                            output += `${rowNum.toString().padEnd(5)}${item.padEnd(15)}${qty.toString().padEnd(8)}`;
+                            output += `${cost.toFixed(2).padEnd(12)}${totalCost.toFixed(2).padEnd(12)}`;
+                            output += `${sell.toFixed(2).padEnd(12)}${totalSell.toFixed(2).padEnd(12)}`;
+                            output += `${tax.toFixed(2).padEnd(8)}${afterTax.toFixed(2).padEnd(12)}`;
+                            output += `${profitPerItem.toFixed(2).padEnd(15)}${totalProfit.toFixed(2)}\n`;
+                            
+                            rowNum++;
+                        }
+                    });
+                    
+                    output += '=======================================================================================================================\n';
+                    output += 'Grouped Totals:\n';
+                    
+                    // Add grouped totals
+                    for (const [item, data] of Object.entries(itemGroups)) {
+                        output += `  • ${item.charAt(0).toUpperCase() + item.slice(1).padEnd(20)} `;
+                        output += `Cost: ${data.totalCost.toFixed(2)} | `;
+                        output += `Sell: ${data.totalSell.toFixed(2)} | `;
+                        output += `Profit: ${data.totalProfit.toFixed(2)}\n`;
+                    }
+                    
+                    output += '=======================================================================================================================\n';
+                    
+                    // Add grand totals
+                    output += `${'TOTAL COST:'.padEnd(85)} ${grandTotalCost.toFixed(2)}\n`;
+                    output += `${'TOTAL SELL:'.padEnd(85)} ${grandTotalSell.toFixed(2)}\n`;
+                    
+                    if (grandTotalProfit >= 0) {
+                        output += `${'GRAND TOTAL PROFIT:'.padEnd(85)} ${grandTotalProfit.toFixed(2)}\n`;
+                    } else {
+                        output += `${'GRAND TOTAL PROFIT:'.padEnd(85)} ${grandTotalProfit.toFixed(2)}\n`;
+                    }
+                    
+                    // Display output with formatting
+                    const outputElement = document.getElementById('profitOutput');
+                    outputElement.innerHTML = '';
+                    
+                    const lines = output.split('\n');
+                    lines.forEach(line => {
+                        const p = document.createElement('p');
+                        p.style.margin = '0';
+                        p.style.fontFamily = 'Consolas, monospace';
+                        
+                        if (line.includes('GRAND TOTAL PROFIT:')) {
+                            p.className = grandTotalProfit >= 0 ? 'positive-value' : 'negative-value';
+                        } else if (line.includes('Grouped Totals:') || line.includes('TOTAL COST:') || line.includes('TOTAL SELL:')) {
+                            p.style.fontWeight = 'bold';
+                        } else if (line.includes('•') && line.includes('Profit:')) {
+                            const profitValue = parseFloat(line.split('Profit:')[1]);
+                            p.className = profitValue >= 0 ? 'positive-value' : 'negative-value';
+                        }
+                        
+                        p.textContent = line;
+                        outputElement.appendChild(p);
+                    });
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+            
+            // Event Listeners
+            document.getElementById('craftExact').addEventListener('change', toggleCraftingTarget);
+            document.getElementById('addResourceBtn').addEventListener('click', addResourceRow);
+            document.getElementById('addJournalBtn').addEventListener('click', addJournalRow);
+            document.getElementById('calculateCraftingBtn').addEventListener('click', calculateCrafting);
+            document.getElementById('clearCraftingBtn').addEventListener('click', clearCraftingAll);
+            document.getElementById('addProfitRowBtn').addEventListener('click', addProfitRow);
+            document.getElementById('calculateProfitBtn').addEventListener('click', calculateProfits);
+            document.getElementById('clearProfitBtn').addEventListener('click', clearProfitAll);
+            
+            // Delegated event listeners for remove buttons
+            document.getElementById('resourcesBody').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-resource')) {
+                    removeResourceRow(e.target);
+                }
+            });
+            
+            document.getElementById('journalBody').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-journal')) {
+                    removeJournalRow(e.target);
+                }
+            });
+            
+            document.getElementById('profitBody').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-profit')) {
+                    removeProfitRow(e.target);
+                }
+            });
+            
+            // Add initial rows
+            addResourceRow();
+            addJournalRow();
+            addProfitRow();
+        });
+    </script>
+</body>
+</html>
